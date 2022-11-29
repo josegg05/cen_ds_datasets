@@ -142,7 +142,7 @@ if __name__ == "__main__":
     params = vars(args)
 
     files_date=f'{params["data_year"][-2:]}{params["data_month"]}'
-    data_path = f"{params['data_folder']}/{params['tables_folder_name']}/{files_date}"
+    data_path = f"{params['data_folder']}/{params['tables_folder_name']}/{params['data_year']}/{files_date}"
     excel_path = f"{params['data_folder']}/{params['excel_folder_name']}/{params['data_year']}/FPen_{files_date}_def"
 
     out_path = f"{params['data_folder']}/{params['out_folder']}"

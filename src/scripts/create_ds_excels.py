@@ -16,18 +16,18 @@ parent = os.path.dirname(current)
 sys.path.append(parent)
  
 # importing
-import data.gen_dem_tables as gdt
+import data.db_ds_excels as dde
 
 
 def get_years(databases_path):
     months = {}
-    for root, dirs, files in os.walk(databases_path, topdown=False):
+    for root, dirs, files in os.walk(databases_path, topdown=True):
         if root == databases_path:
             years = dirs
-        else:            
-            months[root[-4:]] = []
-            for f in files:
-                months[root[-4:]].append(f[-13:-11])
+            years_paths = [os.path.join(databases_path, y) for y in years]
+        elif root in years_paths:      
+            if dirs:
+                months[root[-4:]] = [d[-2:] for d in dirs]
 
     return years, months
 
@@ -35,10 +35,11 @@ def get_years(databases_path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_folder', type=str, default='src/data', help='data folder')
-    parser.add_argument('--db_folder_name', type=str, default='db_ds', help='database folder name')
-    parser.add_argument('--data_year', type=str, default='all', help='database year')
-    parser.add_argument('--data_month', type=str, default='all', help='database year')
-    parser.add_argument('--out_folder', type=str, default='gen_dem_tables', help='.csv output folder')   
+    parser.add_argument('--tables_folder_name', type=str, default='gen_dem_tables', help='database folder name')
+    parser.add_argument('--excel_folder_name', type=str, default='model_ds', help='model and excel folder name')
+    parser.add_argument('--data_year', type=str, default='all', help='table year')
+    parser.add_argument('--data_month', type=str, default='all', help='table month')
+    parser.add_argument('--out_folder', type=str, default='model_ds', help='.csv output folder')
 
     args = parser.parse_args()
 
@@ -47,7 +48,7 @@ if __name__ == "__main__":
 
     months_dic = None
     if params['data_year'] == 'all':
-        years, months_dic = get_years(f"{params['data_folder']}/{params['db_folder_name']}")
+        years, months_dic = get_years(f"{params['data_folder']}/{params['tables_folder_name']}")
     else:
         years = [params['data_year']]
 
@@ -62,23 +63,24 @@ if __name__ == "__main__":
         if months_dic:
             months = months_dic[year]
         for month in months:
-            db_path = f"{params['data_folder']}/{params['db_folder_name']}/{year}"
             files_date=f'{year[-2:]}{month}'
-            db_name = f'BD_balance_valorizado_{files_date}_Data.accdb'
+            data_path = f"{params['data_folder']}/{params['tables_folder_name']}/{year}/{files_date}"
+            excel_path = f"{params['data_folder']}/{params['excel_folder_name']}/{year}/FPen_{files_date}_def"
 
             out_path = f"{out_folder}/{year}"
             if not os.path.exists(out_path):
                 os.mkdir(out_path)
 
-            out_path = f"{out_path}/{files_date}"
+            out_path = f"{out_path}/FPen_{files_date}_def"
+            if not os.path.exists(out_path):
+                os.mkdir(out_path)
+
+            out_path = f"{out_path}/BD_DS_days"
             if not os.path.exists(out_path):
                 os.mkdir(out_path)
 
             time_start = timeit.default_timer()
-            gen_table, dem_table = gdt.create_tables(db_path, db_name, files_date)
-            gen_file_name = f"GENERATION_{files_date}"
-            gdt.save_table(gen_table, out_path, gen_file_name)
-            dem_file_name = f"DEMAND_{files_date}"
-            gdt.save_table(dem_table, out_path, dem_file_name)
+            gen_table, dem_table = dde.load_tables(data_path, files_date)
+            dde.generate_days_excel(gen_table, dem_table, excel_path, out_path, files_date)
             time_end = timeit.default_timer()
             print(f"time run = {time_end - time_start}")

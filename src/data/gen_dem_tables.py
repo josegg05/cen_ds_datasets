@@ -113,9 +113,9 @@ if __name__ == "__main__":
     if not os.path.exists(out_path):
         os.mkdir(out_path)
 
-    # out_path = f"{out_path}/{params['data_year']}"
-    # if not os.path.exists(out_path):
-    #     os.mkdir(out_path)
+    out_path = f"{out_path}/{params['data_year']}"
+    if not os.path.exists(out_path):
+        os.mkdir(out_path)
     
     out_path = f"{out_path}/{files_date}"
     if not os.path.exists(out_path):
