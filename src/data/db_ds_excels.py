@@ -86,7 +86,7 @@ def insert_tables_to_excel(gen_table, dem_table, path, excel_name):
     return
 
 def generate_days_excel(gen_table, dem_table, excel_path, out_path, files_date):
-    base_excel_name = f"BD_DS_{files_date}.xlsm"
+    base_excel_name = f"BD_DS_{files_date}_template.xlsm"
     attributes = ['clave_ds', 'tipo1', 'nombre_barra']   
     num_attributes = len(attributes)
     num_days = int((gen_table.shape[1] - num_attributes)/24)
@@ -102,9 +102,12 @@ def generate_days_excel(gen_table, dem_table, excel_path, out_path, files_date):
     # num_days = 2  # BORRAR
     for day in range(num_days):
         # Create Excel
-        print(f'********** Generating excel of day {day} ************')
-        out_file_name = f"BD_DS_{files_date}_{day+1}.xlsx"
-        create_excel(excel_path, base_excel_name, out_path, out_file_name)
+        print(f'********** Generating excel of day {day+1} ************')
+        out_file_name = f"BD_DS.xlsx"
+        out_path_day = f'{out_path}/BD_DS_dia_{day+1}'
+        if not os.path.exists(out_path_day):
+                os.mkdir(out_path_day)
+        create_excel(excel_path, base_excel_name, out_path_day, out_file_name)
 
         first_hour = day*24
         gen_day_table = gen_data_table.iloc[:, first_hour:first_hour+24]
@@ -121,7 +124,7 @@ def generate_days_excel(gen_table, dem_table, excel_path, out_path, files_date):
         #file_name = f"DEM_{files_name_suffix}_{day}"     
         #dem_day_table.to_csv(f"{out_folder}/{file_name}.csv", index=False, sep=";", decimal=",")
 
-        insert_tables_to_excel(gen_day_table, dem_day_table, out_path, out_file_name)
+        insert_tables_to_excel(gen_day_table, dem_day_table, out_path_day, out_file_name)
 
     return
 
@@ -132,7 +135,7 @@ if __name__ == "__main__":
     parser.add_argument('--tables_folder_name', type=str, default='gen_dem_tables', help='database folder name')
     parser.add_argument('--excel_folder_name', type=str, default='model_ds', help='model and excel folder name')
     parser.add_argument('--data_year', type=str, default='2022', help='table year')
-    parser.add_argument('--data_month', type=str, default='09', help='table month')
+    parser.add_argument('--data_month', type=str, default='03', help='table month')
     parser.add_argument('--out_folder', type=str, default='model_ds', help='.csv output folder')
 
 
@@ -157,9 +160,9 @@ if __name__ == "__main__":
     if not os.path.exists(out_path):
         os.mkdir(out_path)
 
-    out_path = f"{out_path}/BD_DS_days"
-    if not os.path.exists(out_path):
-        os.mkdir(out_path)
+    # out_path = f"{out_path}/BD_DS_days"
+    # if not os.path.exists(out_path):
+    #     os.mkdir(out_path)
     
 
     time_start = timeit.default_timer()

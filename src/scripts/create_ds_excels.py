@@ -37,8 +37,8 @@ if __name__ == "__main__":
     parser.add_argument('--data_folder', type=str, default='src/data', help='data folder')
     parser.add_argument('--tables_folder_name', type=str, default='gen_dem_tables', help='database folder name')
     parser.add_argument('--excel_folder_name', type=str, default='model_ds', help='model and excel folder name')
-    parser.add_argument('--data_year', type=str, default='all', help='table year')
-    parser.add_argument('--data_month', type=str, default='all', help='table month')
+    parser.add_argument('--data_year', type=str, default='2022', help='table year')
+    parser.add_argument('--data_month', type=str, default='02', help='table month')
     parser.add_argument('--out_folder', type=str, default='model_ds', help='.csv output folder')
 
     args = parser.parse_args()
@@ -75,9 +75,9 @@ if __name__ == "__main__":
             if not os.path.exists(out_path):
                 os.mkdir(out_path)
 
-            out_path = f"{out_path}/BD_DS_days"
-            if not os.path.exists(out_path):
-                os.mkdir(out_path)
+            # out_path = f"{out_path}/BD_DS_days"
+            # if not os.path.exists(out_path):
+            #     os.mkdir(out_path)
 
             time_start = timeit.default_timer()
             gen_table, dem_table = dde.load_tables(data_path, files_date)
