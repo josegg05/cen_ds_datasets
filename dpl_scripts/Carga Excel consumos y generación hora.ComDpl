@@ -1,0 +1,263 @@
+int error, i, row, col, stop, newES, newESG, v, sc, cont, cont2, cont3, aux, comp1, comp2, comp3,comp4, comp5, comp6, comp_hour, op, u, case_pre, case_def, case_hour, hour;
+string str,nombred,nombrebd,nombreg,nombrebg,nombresc,prueba,namesc,sheet_name, name_hour, ruta;
+double newD,newG,newfp;
+set Cargas,Generadores,Escenarios;
+object carga,cargai,cargaj,generador,generadori,generadorj,escen,esceni,escenj;
+!obtiene las cargas y generadores desde los contenedores
+Cargas=cont_cargas.GetContents('*.*',1);
+Generadores=cont_gen.GetContents('*.*',1);
+!define variables para determinar si el cálculo es preliminar o definitivo y cargar la información correspondiente
+case_pre=strcmp(fpen,'pre');
+case_def=strcmp(fpen,'def');
+case_hour=strcmp(fpen,'hour');
+if(case_pre=0){
+Escenarios=cont_scen1.GetContents('*.*',1);
+}
+else if(case_def=0){
+Escenarios=cont_scen2.GetContents('*.*',1);
+}
+else if(case_hour=0){
+Escenarios=cont_scen3.GetContents('*.*',1);
+}
+
+Cargas.SortToVar(0,'order');
+Generadores.SortToVar(0,'order'); 
+
+!carga=Cargas.First();
+!generador=Generadores.First();
+!escen=Escenarios.First();
+!while (carga){
+  !cargaj=carga:obj_id;
+  !prueba=cargaj:loc_name;
+  !printf('%s',prueba);
+  !carga=Cargas.Next();
+  !}
+ !while (generador){
+  !generadorj=generador:obj_id;
+  !prueba=generadorj:loc_name;
+  !printf('%s',prueba);
+  !generador=Generadores.Next();
+  !}
+ !while (escen){
+ ! escenj=escen:obj_id;
+  !prueba=escenj:loc_name;
+  !printf('%s',prueba);
+  !escen=Escenarios.Next();
+  !} 
+error = xlStart(); !// abre Excel
+printf('%f',error);
+if (error) {
+  Error('Unable to start MS Excel application');
+  exit();
+  }
+
+error = xlOpenWorkbook(path); !// abre archivo excel de demanda
+if (error) {
+  Error('Unable to open Excel file.');
+  xlTerminate();
+  exit();
+}
+
+
+escen=Escenarios.First();
+esceni=escen:obj_id;
+namesc=esceni:loc_name;
+printf('First Scenario = %s',namesc);
+cont=1;
+cont2=1;
+cont3=1;
+hour = 1;
+!comienza ciclo para cargar las demandas, dependiendo del caso (pre o def)
+while(escen){
+esceni=escen:obj_id;
+namesc=esceni:loc_name;
+comp1=strcmp('Dda Alta FP_pre',namesc);
+comp2=strcmp('Dda Baja FP_pre',namesc);
+comp3=strcmp('Dda Media FP_pre',namesc);
+comp4=strcmp('Dda Alta FP_def',namesc);
+comp5=strcmp('Dda Baja FP_def',namesc);
+comp6=strcmp('Dda Media FP_def',namesc);
+
+name_hour = sprintf('Dda FP %dh', hour);
+comp_hour=strcmp(name_hour,namesc);
+
+if(comp1=0){
+cont=10;
+cont2=12;
+cont3=15;
+xlActivateWorksheet(1);
+}
+else if(comp2=0){
+cont=8;
+cont2=12;
+cont3=13;
+xlActivateWorksheet(1);
+}
+else if(comp3=0){
+cont=9;
+cont2=12;
+cont3=14;
+xlActivateWorksheet(1);
+}
+else if(comp4=0){
+cont=10;
+cont2=12;
+cont3=15;
+xlActivateWorksheet(1);
+}
+else if(comp5=0){
+cont=8;
+cont2=12;
+cont3=13;
+xlActivateWorksheet(1);
+}
+else if(comp6=0){
+cont=9;
+cont2=12;
+cont3=14;
+xlActivateWorksheet(1);
+}
+else if(comp_hour=0){
+cont=7+hour;
+cont2=33;
+cont3=33+hour;
+xlActivateWorksheet(1);
+}
+
+esceni.Activate();
+printf('Operation Scenario activo: %s',namesc);
+printf('hour=%d, name_hour=%s, comp_hour=%d, cont=%d, cont2=%d, cont3=%d ', hour, name_hour, comp_hour, cont, cont2, cont3);
+stop=1;
+carga=Cargas.First();
+while(stop=1){
+  for(row=2; row; row+= 1) {
+    xlGetValue(2, row, nombred);
+    xlGetValue(cont, row, newD);
+    xlGetValue(cont2, row, newfp);
+    xlGetValue(cont3, row, newES);
+	for(carga=Cargas.First();carga;carga=Cargas.Next()){
+	cargaj=carga:obj_id;
+	  nombrebd=cargaj:loc_name;
+	  v=strcmp(nombred,nombrebd);
+	  if(v=0){
+	    !printf('carga %s: %e, %d, %e', nombred, newD, newES, newfp);
+	    cargaj:e:plini=newD;
+	    cargaj:e:outserv=newES;
+	    cargaj:e:coslini=newfp;
+	    cargaj:e:scale0=1;
+	  }
+	}
+	stop=strlen(nombred);
+	if(stop=0){
+		break;
+	}
+  }
+} 
+  escen=Escenarios.Next();
+  op=esceni.Save();
+  if(case_hour=0){
+	hour = hour + 1;
+  }
+  }
+xlTerminate();
+error = xlStart(); !// abre Excel
+if (error) {
+  Error('Unable to start MS Excel application');
+  exit();
+  }
+ 
+error = xlOpenWorkbook(path); !// abre archivo excel de generadores
+
+if (error) {
+  Error('Unable to open Excel file.');
+  xlTerminate();
+  exit();
+  }
+
+escen=Escenarios.First(); 
+cont=1;
+col=1;
+hour = 1;
+while(escen){
+esceni=escen:obj_id;
+namesc=esceni:loc_name;
+comp1=strcmp('Dda Alta FP_pre',namesc);
+comp2=strcmp('Dda Baja FP_pre',namesc);
+comp3=strcmp('Dda Media FP_pre',namesc);
+comp4=strcmp('Dda Alta FP_def',namesc);
+comp5=strcmp('Dda Baja FP_def',namesc);
+comp6=strcmp('Dda Media FP_def',namesc);
+
+name_hour = sprintf('Dda FP %dh', hour);
+comp_hour=strcmp(name_hour,namesc);
+
+if(comp1=0){
+cont=10;
+col=2;
+xlActivateWorksheet(3);
+}
+else if(comp2=0){
+cont=6;
+col=2;
+xlActivateWorksheet(3);
+}
+else if(comp3=0){
+cont=8;
+col=2;
+xlActivateWorksheet(3);
+}
+else if(comp4=0){
+cont=11;
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp5=0){
+cont=7;
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp6=0){
+cont=9;
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp_hour=0){
+cont=5+(hour*2);
+col=3;
+xlActivateWorksheet(2);
+}
+esceni.Activate();
+printf('Operation Scenario activo: %s',namesc); 
+printf('hour=%d, name_hour=%s, comp_hour=%d, cont=%d, col=%d', hour, name_hour, comp_hour, cont, col);
+stop=1;
+generador=Generadores.First();
+while(stop=1){
+  for(row=2; row; row+= 1) {
+    xlGetValue(col, row, nombreg);
+    xlGetValue(cont, row, newG);
+    xlGetValue(cont+1, row, newESG);
+      for(generador=Generadores.First();generador;generador=Generadores.Next()){
+        generadorj=generador:obj_id;
+        nombrebg=generadorj:loc_name;
+        v=strcmp(nombrebg,nombreg);
+          if(v=0){
+            !printf('Gen %s: %e, %d', nombreg, newG, newESG);
+            generadorj:e:pgini=newG;
+            generadorj:e:outserv=newESG;
+            }
+        }
+      stop=strlen(nombreg);
+      if(stop=0){
+        break;
+      }  
+      }
+    } 
+    escen=Escenarios.Next();
+    op=esceni.Save();
+	
+	if(case_hour=0){
+		hour = hour + 1;
+	}
+  }
+ 
+ xlTerminate();

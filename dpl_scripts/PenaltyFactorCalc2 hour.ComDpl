@@ -1,0 +1,626 @@
+set All;
+set AllCubicles;
+set AllGenBusbars;
+object AllGenBusbars1;
+object escen;
+object esceni;
+set AllGenerators;
+set ConElms;
+set Escenarios;
+object Slack;
+object Cubic;
+object Node;
+object Node1;
+object Line;
+object Gen;
+object A;
+int isnode;
+int isterm;
+int isstabar;
+int isgen; 
+int I;    
+int J;
+int isbusbar;
+int intnode;
+int energized; 
+int op;
+int case_pre;
+int case_def;
+int case_hour;
+int tini;
+int tfin;
+int ttrans;             
+object Ldf;
+set SlackGenerators;
+double eps;
+double LoadSens;  
+set AllLoadBs;
+object AllLoadBs1;
+object AllLoadBs2;
+set SetLoadBs;
+set UnconnectedNodes,ConnectedNodes;
+object ConnectedNodes1;  
+object Station,LoadBs;         
+string subestacion;
+string barra;   
+string com;
+string com1;
+string com2;
+string ruta_bar;
+string ruta_line;
+string ruta_bad_escen;
+string namesc;       
+int tension;
+double perdida; 
+double perdida1;
+double facpen;  
+int tapoff;        
+string nombarra;
+string nombarra1;          
+set redes;
+set Nodo;
+set Linea;
+set ElmBranch;
+object ElmBranche;
+object nombarr;
+object red; 
+string zona;
+int indice; 
+int indiceBaja;
+int indiceMedia;
+int indiceAlta;  
+int index;  
+int Compara;
+
+double bar_target_tension, bar_real_tension, bar_pgen, bar_pload, bar_pcomp, bar_pflow, bar_qgen, bar_qload, bar_qcomp, bar_qflow;
+string line_name, line_bus1_bar_name, line_bus2_bar_name,sRes,sR1,sR2,sR3;
+object line_bus1_bar, line_bus2_bar;
+double line_loading, P_line_bus1, P_line_bus2, Q_line_bus1, Q_line_bus2, S_line_bus1, S_line_bus2, cosphi_line_bus1, cosphi_line_bus2, I_line_bus1, I_line_bus2, Ploss_line;
+int bar_out_serv, bar_energized, line_out_serv, line_energized, comp_line_name, comp_escen_name, escen_ok, iRet;
+
+tini=GetSystemTime();
+eps=1.0e-05;
+case_pre=strcmp(fpen,'pre');
+case_def=strcmp(fpen,'def');
+case_hour=strcmp(fpen,'hour');
+if(case_pre=0){
+	Escenarios=cont_scen1.GetContents('*.*',1);
+}
+else if(case_def=0){
+	Escenarios=cont_scen2.GetContents('*.*',1);
+}
+else if(case_hour=0){
+	Escenarios=cont_scen3.GetContents('*.*',1);
+}
+escen=Escenarios.First();
+while(escen){
+esceni=escen:obj_id;
+namesc=esceni:loc_name;
+
+ruta_bad_escen=sprintf('%sno_converge.txt',path);
+fopen(ruta_bad_escen,'r',0);
+iRet = 1000;
+escen_ok = 1;
+while (iRet > -1){
+  iRet = fscanf(0,'%s %s %s',sR1,sR2,sR3);
+  sRes=sprintf('%s %s %s',sR1,sR2,sR3);
+  printf('%s',sRes);
+  comp_escen_name=strcmp(sRes,namesc);
+  if(comp_escen_name=0){
+	  escen_ok = 0;
+  }
+}
+fclose(0);
+
+if(escen_ok = 1){
+printf('Activated scene: %s', namesc);
+esceni.Activate();
+AllLoadBs.Clear();
+AllGenerators.Clear();
+AllGenBusbars.Clear();
+AllCubicles.Clear();
+ConElms.Clear();
+SlackGenerators.Clear();
+SetLoadBs.Clear();
+UnconnectedNodes.Clear();
+ConnectedNodes.Clear();
+redes.Clear();
+Nodo.Clear();
+ElmBranch.Clear();
+AllLoadBs=AllRelevant('*.ElmTerm',0);        
+!Sleep(1000*60*2);    
+!AllLoadBs=SEL.AllBars();
+  
+
+! Aquì veo que tiene el arreglo AllLoadBs es un Set
+
+!-------------------------------------------------------------------------------------------------------------------
+!fopen('S:\Facturacion\Factores de Penalización\2014\01 Enero\Flujo DS\Factores DigSilent\AllLoadBars.csv','w+',0);   
+!com=sprintf('%s','AllLoadBs');
+!fprintf(0,com);  
+
+!AllLoadBs1=AllLoadBs.First();  
+!  while(AllLoadBs1)
+!  { 
+!    com1=AllLoadBs1:loc_name;
+!    com2=sprintf('%s',com1);
+!    fprintf(0,com2);   
+!AllLoadBs1=AllLoadBs.Next(); 
+!  }  
+!fclose(0); 
+!-------------------------------------------------------------------------------------------------------------------
+
+CalcLdf:i_power=0;
+!Run LoadFlow first
+CalcLdf.Execute();
+Echo.Off();
+
+
+
+ 
+!Get all generators and connceted bus bars
+AllCubicles=Cubicles.Get(); 
+Cubic=AllCubicles.First();
+
+while(Cubic)
+{
+  ConElms=Cubic.GetConnections(1);
+  A=ConElms.First();
+  Node=NULL;
+  Gen=NULL;
+  while(A)
+  {
+    isterm=A.IsClass('ElmTerm');
+    isnode=A.IsNode();
+    isstabar=A.IsClass('StaBar');
+    isgen=A.IsClass('ElmSym');
+    
+    if(isterm){
+    intnode=A:e:iUsage;
+    !printf('%i',intnode);
+      if(intnode<2){
+      isbusbar=1;
+      }
+    }
+    if (isterm.and.isbusbar)
+    {
+      Node=A;
+      !printf('%s',A:e:loc_name);
+    }
+    else if (isgen.and.A:outserv=0)
+    {
+      Gen=A;
+      !printf('%s',A:e:loc_name);
+    }
+   A=ConElms.Next();
+  }  
+    if (Node.and.Gen)
+    {  
+      !printf('%s',Node:e:loc_name);
+      if(Node:e:outserv=0)
+      {
+        if (Node:b:imode>0) 
+          AllGenerators.Add(Gen);
+      }
+    }   
+  
+    if (Node)
+    {
+    energized=Node.IsEnergized();
+    if(energized=1){
+    intnode=Node:e:iUsage;
+    if(intnode<2){
+      if(Node:e:outserv=0)
+      {
+        if (i_allbus=1.or.Gen)
+        { 
+          
+          if (Node:b:imode>0){ 
+            AllGenBusbars.Add(Node);
+        }
+      }
+  }
+  }
+   }
+   }
+Cubic=AllCubicles.Next();
+
+}
+    
+    
+
+! Aquí veo que tiene el arreglo AllGenBusbars.  Es un set
+
+!---------------------------------------------------------------------------------------------------------------------
+!fopen('S:\Facturacion\Factores de Penalización\2014\01 Enero\Flujo DS\Factores DigSilent\AllGenBusbars.csv','w+',1);   
+!com=sprintf('%s','AllLoadBs');
+!fprintf(1,com);  
+!
+!AllGenBusbars1=AllGenBusbars.First();  
+!  while(AllGenBusbars1)
+!  { 
+!    com1=AllGenBusbars1:loc_name;
+!    com2=sprintf('%s',com1);
+!    fprintf(1,com2);   
+!  AllGenBusbars1=AllGenBusbars.Next(); 
+!  }  
+!fclose(1);   
+!----------------------------------------------------------------------------------------------------------------------  
+
+!el registro de abajo se debe activar y desactivar el subsiguiente, adicionalmente indicar en tre parentesis el nombre de la barra de referencia
+LoadBs=AllLoadBs.FirstFilt('REFJ1'); 
+!LoadBs=AllLoadBs.First();   
+  
+ 
+while(LoadBs)          ! Este while va con el corchete final despues del exit
+{
+
+!Reset Container
+  SlackGenerators.Clear();
+  SetLoadBs.Clear();
+  UnconnectedNodes.Clear();
+  ConnectedNodes.Clear();
+
+!Calculate Sensitivity at Load Center
+  CalcSens:iopt_mod=1;
+  CalcSens:p_bus=LoadBs;
+  CalcSens.Execute();
+
+!Define Slack Generators
+  Gen=AllGenerators.First();
+  while(Gen){
+    if (abs(Gen:m:dPdP:bus1)>eps){
+      SlackGenerators.Add(Gen);
+    }
+    Gen=AllGenerators.Next();
+  }
+   
+   
+  Slack=SlackGenerators.First();
+  LoadSens=Slack:m:dPdP:bus1;
+
+   J=1;
+  Node=AllGenBusbars.First();
+  while(Node)
+  {
+    CalcSens:p_bus=Node;
+    CalcSens.Execute();
+     
+
+   !Esto sirve para verificar si la barra que me interesa está en el arreglo nodo.
+    !----------------------------------------------------------------------------------------------------------------------
+!    barra=Node:e:loc_name;  
+!    I=0;!strcmp(barra,'Río Huasco 110 kV'); ! Aquì poner el nombre de la barra que me interesa
+!    if(I=0) {
+!    fopen('S:\Facturacion\Factores de Penalización\2014\08 Agosto\Flujo DS\Factores DigSilent\El Salado 110_1.csv','w+',2);
+!    
+!    com=sprintf('%s %s %d','Por aquì pasó Rio Huasco 110' , ',', J);
+!    J=J+1; 
+!    !fprintf(2,com);
+!    fprintf(2,com);
+!    fclose(2);
+!    }
+    !-----------------------------------------------------------------------------------------------------------------------
+     
+
+    if (abs(Slack:m:dPdP:bus1)>eps)
+    {
+      ConnectedNodes.Add(Node);   
+      
+      if (i_loadref)
+      {
+        Node:dpl1=-(1-LoadSens/Slack:m:dPdP:bus1)*1000;
+        Node:dpl2=1+Node:dpl1/1000;    
+          
+        !Esto sirve para verificar si la barra que me interesa está en el arreglo nodo.
+        !----------------------------------------------------------------------------------------------------------------------
+ !       barra=Node:e:loc_name;  
+ !       I=strcmp(barra,'Río Huasco 110 kV');
+ !       if(I=0) {
+ !       fopen('S:\Facturacion\Factores de Penalización\2014\01 Enero\Flujo DS\Factores DigSilent\El Salado 110_2.csv','w+',3);
+ !       perdida1=Node:dpl1;
+ !       com=sprintf('%s %e','Por aquì pasó el Rio Huasco 110',perdida1); 
+ !       fprintf(3,com);
+ !       fclose(3);
+ !       }
+        !----------------------------------------------------------------------------------------------------------------------  
+          
+        
+      }
+      else
+      {
+        Node:dpl1=(1-Slack:m:dPdP:bus1/LoadSens)*1000;
+        Node:dpl2=1-Node:dpl1/1000;
+      }            
+ 
+    } 
+    else
+    {
+      Node:dpl1=0;
+      Node:dpl2=0;
+      UnconnectedNodes.Add(Node);
+    }   
+    
+    Node=AllGenBusbars.Next();
+    
+  }   
+
+    
+    !----------------------------------------------------------------------------------------------------------------------
+    
+!    I=0;!strcmp(barra,'Río Huasco 110 kV'); ! Aquì poner el nombre de la barra que me interesa
+!    if(I=0) {
+!    fopen('S:\Facturacion\Factores de Penalización\2014\08 Agosto\Flujo DS\Factores DigSilent\El Salado 110_2.csv','w+',3);
+    
+!    com=sprintf('%s','Terminó sensibilidades');
+
+    !fprintf(3,com);
+!    fprintf(3,com);
+!    fclose(3);
+!    }
+    !-----------------------------------------------------------------------------------------------------------------------
+   
+       
+  SetLoadBs.Add(LoadBs); 
+  J=1; 
+  isstabar=LoadBs.IsClass('StaBar');
+  if (isstabar)
+  {
+    Station=LoadBs:fold_id;
+    SetLoadBs.Add(Station);    
+  }  
+ 
+ Form.WriteOut(ConnectedNodes,SetLoadBs);   
+
+!Esto sirve para verificar si la barra que me interesa está en el arreglo nodo.
+    !------------------------- barra=Node:e:loc_name;  
+!    I=0;!strcmp(barra,'Río Huasco 110 kV'); ! Aquì poner el nombre de la barra que me interesa
+!    if(I=0) {
+!    fopen('S:\Facturacion\Factores de Penalización\2014\08 Agosto\Flujo DS\Factores DigSilent\El Salado 110_3.csv','w+',4);
+!    com=sprintf('%s %s %d','Loop AllLoadBs' , ',', J);
+!    J=J+1; 
+    !fprintf(2,com);
+!    fprintf(4,com);
+!    fclose(4);
+!    }
+    !-----------------------------------------------------------------------------------------------------------------------
+     
+
+    
+  !LoadBs=AllLoadBs.Next();
+ 
+
+printf('Escritura de Resultados');      
+      
+      
+Echo.On();    
+
+ruta_bar=sprintf('%s%s_bar.csv',path,namesc);
+fopen(ruta_bar,'w+',0);
+ruta_line=sprintf('%s%s_line.csv',path,namesc);
+fopen(ruta_line,'w+',1);
+!fopen('\\nas-coordinador\D. Transferencias\Factores de Penalizacion\2018\1806\01 Versión Preliminar\Flujo DS\Factores DigSilent\facPen_DB_sen1806.csv','w+',0);   
+com=sprintf('Barra ; Nombre Barra ; Tensión ; Zona ; Index ; Out of Service ; Energized ; Pérdidas ; Factor Penalización ; Tensión Target ; Tensión Real ; pgen ; pload ; pcomp ; pflow ; qgen ; qload ; qcomp ; qflow');
+fprintf(0,com);
+com=sprintf('Línea ; Barra i ; Barra j ; Zona ; Out of Service ; Energized ; Loading ; Pi ; Pj ; Qi ; Qj ; Si ; Sj ; Factor de Potencia i ; Factor de Potencia j ; Ii ; Ij ; Ploss');
+fprintf(1,com); 
+                
+redes=AllRelevant('*.ElmNet',0);                    !returns all calculation relevant objects
+red=redes.First();                                  !returns the first objects
+  
+  
+while(red){
+    Nodo=red.GetContents('*.ElmTerm,*.StaBar',1);    
+    ElmBranch=red.GetContents('*.ElmBranch',1);
+	Linea=red.GetContents('*.ElmLne',1);
+	
+    !Nodo=red.GetContents('*.iUsage',1);
+    Node=Nodo.First();                            !returns the first objects
+    zona=red:loc_name;      
+    while(Node){
+    !Genera factor de penalización sólo a los taps y barras
+    if(Node:e:iUsage<2){
+		  bar_energized=Node:e:ciEnergized;
+		  if(bar_energized){
+			tapoff=Node.IsClass('ElmTerm');
+			if (tapoff){
+			  tension=Node:e:uknom;
+			  perdida=Node:dpl1;
+			  facpen=Node:dpl2;
+			  
+			  ! New variables
+			  bar_target_tension=Node:e:vtarget;
+			  bar_out_serv=Node:e:outserv;
+			  bar_real_tension=Node:m:u;
+			  bar_pgen=Node:m:Pgen;
+			  bar_pload=Node:m:Pload;
+			  bar_pcomp=Node:m:Pcomp;
+			  bar_pflow=Node:m:Pflow;
+			  bar_qgen=Node:m:Qgen;
+			  bar_qload=Node:m:Qload;
+			  bar_qcomp=Node:m:Qcomp;
+			  bar_qflow=Node:m:Qflow;
+			  
+			  subestacion=Node:r:fold_id:loc_name;
+			  barra=Node:e:loc_name;
+			  !indiceBaja=strcmp(subestacion,'Dda Baja');
+			  !indiceMedia=strcmp(subestacion,'Dda Media');
+			  !indiceAlta=strcmp(subestacion,'Dda Alta');
+			  
+			  nombarra=sprintf('%s %s',subestacion,barra); !Nuevo 
+			  
+			  ElmBranche=ElmBranch.First();
+			  index=1;
+			  while(ElmBranche){
+			  nombarra1=ElmBranche:e:loc_name;
+			  Compara=strcmp(subestacion,nombarra1);
+			  if(Compara<>0){
+			  }
+			  else
+			  {
+			   index=0;
+			  }
+			  ElmBranche=ElmBranch.Next();
+			  }
+			  !indice=indiceBaja+indiceMedia+indiceAlta+index;
+
+			  com=sprintf('%s ; %s ; %d ; %s ; %d ; %d ; %d ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e',barra,nombarra,tension,zona,index,bar_out_serv,bar_energized,perdida,facpen,bar_target_tension,bar_real_tension,bar_pgen,bar_pload,bar_pcomp,bar_pflow,bar_qgen,bar_qload,bar_qcomp,bar_qflow);
+			  fprintf(0,com);
+			}
+			else{  
+			  tension=Node:e:uknom;
+			  perdida=Node:dpl1;
+			  facpen=Node:dpl2;
+			  
+			  ! New variables
+			  bar_target_tension=Node:e:vtarget;
+			  bar_out_serv=Node:e:outserv;
+			  bar_real_tension=Node:m:u;
+			  bar_pgen=Node:m:Pgen;
+			  bar_pload=Node:m:Pload;
+			  bar_pcomp=Node:m:Pcomp;
+			  bar_pflow=Node:m:Pflow;
+			  bar_qgen=Node:m:Qgen;
+			  bar_qload=Node:m:Qload;
+			  bar_qcomp=Node:m:Qcomp;
+			  bar_qflow=Node:m:Qflow;
+			  
+			  subestacion=Node:r:fold_id:loc_name;
+			  barra=Node:e:loc_name;
+			  !indiceBaja=strcmp(subestacion,'Dda Baja');
+			  !indiceMedia=strcmp(subestacion,'Dda Media');
+			  !indiceAlta=strcmp(subestacion,'Dda Alta');
+			  
+			  ElmBranche=ElmBranch.First();
+			  index=1;
+			  while(ElmBranche){
+			  nombarra1=ElmBranche:e:loc_name;
+			  Compara=strcmp(subestacion,nombarra1);
+			  if(Compara<>0){
+			  }
+			  else
+			  {
+			   index=0;
+			  }
+			  ElmBranche=ElmBranch.Next();
+			  }
+			  !indice=indiceBaja+indiceMedia+indiceAlta+index;
+			  nombarra=sprintf('%s %s',subestacion,barra);    
+
+			  printf('%s ; %s ; %d ; %s ; %d ; %d ; %d ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e',barra,nombarra,tension,zona,index,bar_out_serv,bar_energized,perdida,facpen,bar_target_tension,bar_real_tension,bar_pgen,bar_pload,bar_pcomp,bar_pflow,bar_qgen,bar_qload,bar_qcomp,bar_qflow);
+			  com=sprintf('%s ; %s ; %d ; %s ; %d ; %d ; %d ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e',barra,nombarra,tension,zona,index,bar_out_serv,bar_energized,perdida,facpen,bar_target_tension,bar_real_tension,bar_pgen,bar_pload,bar_pcomp,bar_pflow,bar_qgen,bar_qload,bar_qcomp,bar_qflow);
+			  fprintf(0,com);
+			}
+		  }
+		  else{
+			tension=Node:e:uknom;
+			perdida=Node:dpl1;
+			facpen=Node:dpl2;
+			  
+			! New variables
+			bar_target_tension=Node:e:vtarget;
+			bar_out_serv=Node:e:outserv;
+			bar_real_tension=0;
+			bar_pgen=0;
+			bar_pload=0;
+			bar_pcomp=0;
+			bar_pflow=0;
+			bar_qgen=0;
+			bar_qload=0;
+			bar_qcomp=0;
+			bar_qflow=0;
+			
+			subestacion=Node:r:fold_id:loc_name;
+			barra=Node:e:loc_name;
+			ElmBranche=ElmBranch.First();
+			index=1;
+			while(ElmBranche){
+			  nombarra1=ElmBranche:e:loc_name;
+			  Compara=strcmp(subestacion,nombarra1);
+			  if(Compara<>0){
+			  }
+			  else
+			  {
+			   index=0;
+			  }
+			  ElmBranche=ElmBranch.Next();
+			}
+			nombarra=sprintf('%s %s',subestacion,barra);
+			printf('%s ; %s ; %d ; %s ; %d ; %d ; %d ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e',barra,nombarra,tension,zona,index,bar_out_serv,bar_energized,perdida,facpen,bar_target_tension,bar_real_tension,bar_pgen,bar_pload,bar_pcomp,bar_pflow,bar_qgen,bar_qload,bar_qcomp,bar_qflow);
+			com=sprintf('%s ; %s ; %d ; %s ; %d ; %d ; %d ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e',barra,nombarra,tension,zona,index,bar_out_serv,bar_energized,perdida,facpen,bar_target_tension,bar_real_tension,bar_pgen,bar_pload,bar_pcomp,bar_pflow,bar_qgen,bar_qload,bar_qcomp,bar_qflow);
+			fprintf(0,com);			
+		  }
+	  }
+		Node=Nodo.Next();
+	}
+	  
+      Line=Linea.First();
+      zona=red:loc_name;
+      while(Line){
+		line_out_serv=Line:e:outserv;
+		line_name = Line:e:loc_name;
+		comp_line_name = strcmp('Tap Lo Boza - Lo Boza 110kV L1(1)',line_name);
+		if({line_out_serv=0}.and.{comp_line_name<>0}){		
+			line_bus1_bar = Line:r:bus1:e:cBusBar;
+			line_bus1_bar_name = line_bus1_bar:e:loc_name;
+			line_bus2_bar = Line:r:bus2:e:cBusBar;
+			line_bus2_bar_name = line_bus2_bar:e:loc_name;			
+			line_energized=Line:e:ciEnergized;
+			line_loading = Line:c:loading;
+			P_line_bus1 = Line:m:P:bus1;
+			P_line_bus2 = Line:m:P:bus2;
+			Q_line_bus1 = Line:m:Q:bus1;
+			Q_line_bus2 = Line:m:Q:bus2;
+			S_line_bus1 = Line:m:S:bus1;
+			S_line_bus2 = Line:m:S:bus2;
+			cosphi_line_bus1 = Line:m:cosphi:bus1;
+			cosphi_line_bus2 = Line:m:cosphi:bus2;
+			I_line_bus1 = Line:m:I:bus1;
+			I_line_bus2 = Line:m:I:bus2;
+			Ploss_line = Line:m:Ploss:bus1;
+		
+			printf('%s ; %s ; %s ; %s ; %d ; %d ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e',line_name, line_bus1_bar_name, line_bus2_bar_name,zona,line_out_serv,line_energized,line_loading, P_line_bus1, P_line_bus2, Q_line_bus1, Q_line_bus2, S_line_bus1, S_line_bus2, cosphi_line_bus1, cosphi_line_bus2, I_line_bus1, I_line_bus2, Ploss_line);
+			com=sprintf('%s ; %s ; %s ; %s ; %d ; %d ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e',line_name, line_bus1_bar_name, line_bus2_bar_name,zona,line_out_serv,line_energized,line_loading, P_line_bus1, P_line_bus2, Q_line_bus1, Q_line_bus2, S_line_bus1, S_line_bus2, cosphi_line_bus1, cosphi_line_bus2, I_line_bus1, I_line_bus2, Ploss_line);
+		
+			fprintf(1,com);
+		}
+		else{
+			line_bus1_bar_name = '?';
+			line_bus2_bar_name = '?';
+			line_energized=Line:e:ciEnergized;
+			line_loading = 0;
+			P_line_bus1 = 0;
+			P_line_bus2 = 0;
+			Q_line_bus1 = 0;
+			Q_line_bus2 = 0;
+			S_line_bus1 = 0;
+			S_line_bus2 = 0;
+			cosphi_line_bus1 = 1;
+			cosphi_line_bus2 = 1;
+			I_line_bus1 = 0;
+			I_line_bus2 = 0;
+			Ploss_line = 0;
+		
+			printf('%s ; %s ; %s ; %s ; %d ; %d ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e',line_name, line_bus1_bar_name, line_bus2_bar_name,zona,line_out_serv,line_energized,line_loading, P_line_bus1, P_line_bus2, Q_line_bus1, Q_line_bus2, S_line_bus1, S_line_bus2, cosphi_line_bus1, cosphi_line_bus2, I_line_bus1, I_line_bus2, Ploss_line);
+			com=sprintf('%s ; %s ; %s ; %s ; %d ; %d ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e ; %e',line_name, line_bus1_bar_name, line_bus2_bar_name,zona,line_out_serv,line_energized,line_loading, P_line_bus1, P_line_bus2, Q_line_bus1, Q_line_bus2, S_line_bus1, S_line_bus2, cosphi_line_bus1, cosphi_line_bus2, I_line_bus1, I_line_bus2, Ploss_line);
+			fprintf(1,com);
+		}
+		Line=Linea.Next();
+      }
+red=redes.Next();
+}
+fclose(0);
+fclose(1);
+break;
+}
+}
+op=esceni.Save();
+escen=Escenarios.Next();
+tfin=GetSystemTime();
+ttrans=(tfin-tini)/60;
+printf('escenario %s ok = %d', namesc, escen_ok);
+printf('tiempo de ejecución hasta escenario %s DPL [min]: %i', namesc, ttrans);
+}
+tfin=GetSystemTime();
+ttrans=(tfin-tini)/60;
+printf('tiempo de ejecución DPL [min]: %i',ttrans);

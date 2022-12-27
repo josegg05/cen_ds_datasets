@@ -1,0 +1,440 @@
+int error, i, row, col, stop, newES, newESG, v, sc, cont, cont2, cont3, aux, comp1, comp2, comp3,comp4, comp5, comp6, comp7, comp8, comp9, comp10, comp11, comp12, comp13, comp14, comp15, comp16, comp17, comp18, comp19, comp20, comp21, comp22, comp23, comp24, op, u;
+string str,nombred,nombrebd,nombreg,nombrebg,nombresc,prueba,namesc,sheet_name;
+double newD,newG,newfp;
+set Cargas,Generadores,Escenarios;
+object carga,cargai,cargaj,generador,generadori,generadorj,escen,esceni,escenj;
+!obtiene las cargas y generadores desde los contenedores
+Cargas=cont_cargas.GetContents('*.*',1);
+Generadores=cont_gen.GetContents('*.*',1);
+!define variables para determinar si el cálculo es preliminar o definitivo y cargar la información correspondiente
+Escenarios=cont_scen3.GetContents('*.*',1);
+
+
+Cargas.SortToVar(0,'order');
+Generadores.SortToVar(0,'order'); 
+
+error = xlStart(); !// abre Excel
+printf('%f',error);
+if (error) {
+  Error('Unable to start MS Excel application');
+  exit();
+  }
+
+  
+error = xlOpenWorkbook(path); !// abre archivo excel de demanda
+if (error) {
+  Error('Unable to open Excel file.');
+  xlTerminate();
+  exit();
+}
+
+
+escen=Escenarios.First();
+esceni=escen:obj_id;
+namesc=esceni:loc_name;
+printf('First Scenario = %s',namesc);
+cont=1;
+cont2=1;
+cont3=1;
+!comienza ciclo para cargar las demandas, dependiendo del caso horas
+while(escen){
+esceni=escen:obj_id;
+namesc=esceni:loc_name;
+comp1=strcmp('Dda FP 1h',namesc);
+comp2=strcmp('Dda FP 2h',namesc);
+comp3=strcmp('Dda FP 3h',namesc);
+comp4=strcmp('Dda FP 4h',namesc);
+comp5=strcmp('Dda FP 5h',namesc);
+comp6=strcmp('Dda FP 6h',namesc);
+comp7=strcmp('Dda FP 7h',namesc);
+comp8=strcmp('Dda FP 8h',namesc);
+comp9=strcmp('Dda FP 9h',namesc);
+comp10=strcmp('Dda FP 10h',namesc);
+comp11=strcmp('Dda FP 11h',namesc);
+comp12=strcmp('Dda FP 12h',namesc);
+comp13=strcmp('Dda FP 13h',namesc);
+comp14=strcmp('Dda FP 14h',namesc);
+comp15=strcmp('Dda FP 15h',namesc);
+comp16=strcmp('Dda FP 16h',namesc);
+comp17=strcmp('Dda FP 17h',namesc);
+comp18=strcmp('Dda FP 18h',namesc);
+comp19=strcmp('Dda FP 19h',namesc);
+comp20=strcmp('Dda FP 20h',namesc);
+comp21=strcmp('Dda FP 21h',namesc);
+comp22=strcmp('Dda FP 22h',namesc);
+comp23=strcmp('Dda FP 23h',namesc);
+comp24=strcmp('Dda FP 24h',namesc);
+
+if(comp1=0){
+cont=7+1;
+cont2=33;
+cont3=33+1;
+xlActivateWorksheet(1);
+}
+else if(comp2=0){
+cont=7+2;
+cont2=33;
+cont3=33+2;
+xlActivateWorksheet(1);
+}
+else if(comp3=0){
+cont=7+3;
+cont2=33;
+cont3=33+3;
+xlActivateWorksheet(1);
+}
+else if(comp4=0){
+cont=7+4;
+cont2=33;
+cont3=33+4;
+xlActivateWorksheet(1);
+}
+else if(comp5=0){
+cont=7+5;
+cont2=33;
+cont3=33+5;
+xlActivateWorksheet(1);
+}
+else if(comp6=0){
+cont=7+6;
+cont2=33;
+cont3=33+6;
+xlActivateWorksheet(1);
+}
+else if(comp7=0){
+cont=7+7;
+cont2=33;
+cont3=33+7;
+xlActivateWorksheet(1);
+}
+else if(comp8=0){
+cont=7+8;
+cont2=33;
+cont3=33+8;
+xlActivateWorksheet(1);
+}
+else if(comp9=0){
+cont=7+9;
+cont2=33;
+cont3=33+9;
+xlActivateWorksheet(1);
+}
+else if(comp10=0){
+cont=7+10;
+cont2=33;
+cont3=33+10;
+xlActivateWorksheet(1);
+}
+else if(comp11=0){
+cont=7+11;
+cont2=33;
+cont3=33+11;
+xlActivateWorksheet(1);
+}
+else if(comp12=0){
+cont=7+12;
+cont2=33;
+cont3=33+12;
+xlActivateWorksheet(1);
+}
+else if(comp13=0){
+cont=7+13;
+cont2=33;
+cont3=33+13;
+xlActivateWorksheet(1);
+}
+else if(comp14=0){
+cont=7+14;
+cont2=33;
+cont3=33+14;
+xlActivateWorksheet(1);
+}
+else if(comp15=0){
+cont=7+15;
+cont2=33;
+cont3=33+15;
+xlActivateWorksheet(1);
+}
+else if(comp16=0){
+cont=7+16;
+cont2=33;
+cont3=33+16;
+xlActivateWorksheet(1);
+}
+else if(comp17=0){
+cont=7+17;
+cont2=33;
+cont3=33+17;
+xlActivateWorksheet(1);
+}
+else if(comp18=0){
+cont=7+18;
+cont2=33;
+cont3=33+18;
+xlActivateWorksheet(1);
+}
+else if(comp19=0){
+cont=7+19;
+cont2=33;
+cont3=33+19;
+xlActivateWorksheet(1);
+}
+else if(comp20=0){
+cont=7+20;
+cont2=33;
+cont3=33+20;
+xlActivateWorksheet(1);
+}
+else if(comp21=0){
+cont=7+21;
+cont2=33;
+cont3=33+21;
+xlActivateWorksheet(1);
+}
+else if(comp22=0){
+cont=7+22;
+cont2=33;
+cont3=33+22;
+xlActivateWorksheet(1);
+}
+else if(comp23=0){
+cont=7+23;
+cont2=33;
+cont3=33+23;
+xlActivateWorksheet(1);
+}
+else if(comp24=0){
+cont=7+24;
+cont2=33;
+cont3=33+24;
+xlActivateWorksheet(1);
+}
+esceni.Activate();
+printf('Operation Scenario activo: %s',namesc);
+printf('cont=%d, cont2=%d, cont3=%d ', cont, cont2, cont3);
+stop=1;
+carga=Cargas.First();
+while(stop=1){
+  for(row=2; row; row+= 1) {
+    xlGetValue(2, row, nombred);
+    xlGetValue(cont, row, newD);
+    xlGetValue(cont2, row, newfp);
+    xlGetValue(cont3, row, newES);
+	for(carga=Cargas.First();carga;carga=Cargas.Next()){
+	cargaj=carga:obj_id;
+	  nombrebd=cargaj:loc_name;
+	  v=strcmp(nombred,nombrebd);
+	  if(v=0){
+	    !printf('carga %s: %e, %d, %e', nombred, newD, newES, newfp);
+	    cargaj:e:plini=newD;
+	    cargaj:e:outserv=newES;
+	    cargaj:e:coslini=newfp;
+	    cargaj:e:scale0=1;
+	  }
+	}
+	stop=strlen(nombred);
+	if(stop=0){
+		break;
+	}
+  }
+} 
+  escen=Escenarios.Next();
+  op=esceni.Save();
+  }
+xlTerminate();
+error = xlStart(); !// abre Excel
+if (error) {
+  Error('Unable to start MS Excel application');
+  exit();
+  }
+  
+error = xlOpenWorkbook(path); !// abre archivo excel de generadores
+
+if (error) {
+  Error('Unable to open Excel file.');
+  xlTerminate();
+  exit();
+  }
+
+escen=Escenarios.First(); 
+cont=1;
+col=1;
+while(escen){
+esceni=escen:obj_id;
+namesc=esceni:loc_name;
+comp1=strcmp('Dda FP 1h',namesc);
+comp2=strcmp('Dda FP 2h',namesc);
+comp3=strcmp('Dda FP 3h',namesc);
+comp4=strcmp('Dda FP 4h',namesc);
+comp5=strcmp('Dda FP 5h',namesc);
+comp6=strcmp('Dda FP 6h',namesc);
+comp7=strcmp('Dda FP 7h',namesc);
+comp8=strcmp('Dda FP 8h',namesc);
+comp9=strcmp('Dda FP 9h',namesc);
+comp10=strcmp('Dda FP 10h',namesc);
+comp11=strcmp('Dda FP 11h',namesc);
+comp12=strcmp('Dda FP 12h',namesc);
+comp13=strcmp('Dda FP 13h',namesc);
+comp14=strcmp('Dda FP 14h',namesc);
+comp15=strcmp('Dda FP 15h',namesc);
+comp16=strcmp('Dda FP 16h',namesc);
+comp17=strcmp('Dda FP 17h',namesc);
+comp18=strcmp('Dda FP 18h',namesc);
+comp19=strcmp('Dda FP 19h',namesc);
+comp20=strcmp('Dda FP 20h',namesc);
+comp21=strcmp('Dda FP 21h',namesc);
+comp22=strcmp('Dda FP 22h',namesc);
+comp23=strcmp('Dda FP 23h',namesc);
+comp24=strcmp('Dda FP 24h',namesc);
+
+if(comp1=0){
+cont=5+(1*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp2=0){
+cont=5+(2*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp3=0){
+cont=5+(3*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp4=0){
+cont=5+(4*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp5=0){
+cont=5+(5*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp6=0){
+cont=5+(6*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp7=0){
+cont=5+(7*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp8=0){
+cont=5+(8*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp9=0){
+cont=5+(9*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp10=0){
+cont=5+(10*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp11=0){
+cont=5+(11*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp12=0){
+cont=5+(12*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp13=0){
+cont=5+(13*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp14=0){
+cont=5+(14*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp15=0){
+cont=5+(15*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp16=0){
+cont=5+(16*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp17=0){
+cont=5+(17*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp18=0){
+cont=5+(18*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp19=0){
+cont=5+(19*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp20=0){
+cont=5+(20*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp21=0){
+cont=5+(21*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp22=0){
+cont=5+(22*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp23=0){
+cont=5+(23*2);
+col=3;
+xlActivateWorksheet(2);
+}
+else if(comp24=0){
+cont=5+(24*2);
+col=3;
+xlActivateWorksheet(2);
+}
+esceni.Activate();
+printf('Operation Scenario activo: %s',namesc); 
+printf('cont=%d, col=%d', cont, col);
+stop=1;
+generador=Generadores.First();
+while(stop=1){
+  for(row=2; row; row+= 1) {
+    xlGetValue(col, row, nombreg);
+    xlGetValue(cont, row, newG);
+    xlGetValue(cont+1, row, newESG);
+      for(generador=Generadores.First();generador;generador=Generadores.Next()){
+        generadorj=generador:obj_id;
+        nombrebg=generadorj:loc_name;
+        v=strcmp(nombrebg,nombreg);
+          if(v=0){
+            !printf('Gen %s: %e, %d', nombreg, newG, newESG);
+            generadorj:e:pgini=newG;
+            generadorj:e:outserv=newESG;
+            }
+        }
+      stop=strlen(nombreg);
+      if(stop=0){
+        break;
+      }  
+      }
+    } 
+    escen=Escenarios.Next();
+    op=esceni.Save();
+  }
+ 
+ xlTerminate();

@@ -1,0 +1,94 @@
+!Variables definition
+double Dda_total,Loss_total,G_total,f_ajuste1,f_ajuste2,Pvirtual,tol,comp;
+int i,op,contador,contador_error,case_pre,case_def,case_hour, max_iter_reached, error;
+string name,name_typ,prueba,namesc,com,ruta;
+object oLdf,oLoad,Gvirtual,sumgrid,typ_load,esceni,escen,carga,cargaj;
+set Gen,sLoads,Escenarios,Cargas,Generadores;
+Cargas=cont_cargas.GetContents('*.*',1);
+Generadores=cont_gen.GetContents('*.*',1);
+case_pre=strcmp(fpen,'pre');
+case_def=strcmp(fpen,'def');
+case_hour=strcmp(fpen,'hour');
+EchoOff();
+if(case_pre=0){
+Escenarios=cont_scen1.GetContents('*.*',1);
+}
+else if(case_def=0){
+Escenarios=cont_scen2.GetContents('*.*',1);
+}
+else if(case_hour=0){
+Escenarios=cont_scen3.GetContents('*.*',1);
+}
+Cargas.SortToVar(0,'order');
+Generadores.SortToVar(0,'order');
+escen=Escenarios.First();
+ruta=sprintf('%s/no_converge.txt',path);
+fopen(ruta,'w+',0);
+while(escen){
+	esceni=escen:obj_id;
+	esceni.Activate();
+	namesc=esceni:loc_name;
+	printf('Escenario activo: %s', namesc);
+	oLdf = GetCaseObject('ComLdf');
+	error = oLdf.Execute();
+	printf('Ldf error = %d', error);
+	!get all the loads  
+	Gen=AllRelevant('ElmSym');
+	Gvirtual=Gen.FirstFilt('0 Generador Libre');
+	sumgrid=SummaryGrid();
+	Dda_total=sumgrid:c:LoadP;
+	Loss_total=sumgrid:c:LossP;
+	G_total=sumgrid:c:GenP;
+	Pvirtual=Gvirtual:m:P:bus1;
+	tol=1;
+
+	! iterar 
+	f_ajuste1=1;
+	contador=0;
+	contador_error=0;
+	max_iter_reached=0;
+	while({tol>=0.01}.and.{max_iter_reached=0}){
+		contador=contador+1;
+		f_ajuste2=f_ajuste1-Pvirtual/Dda_total;
+		f_ajuste1=f_ajuste2;
+		tol=abs(Pvirtual);
+		printf('%f  %f  %f',Pvirtual,f_ajuste1,Dda_total);
+		! change the scaling factor of the loads
+		for(carga=Cargas.First();carga;carga=Cargas.Next()){
+			cargaj=carga:obj_id;
+			prueba=cargaj:loc_name;
+			name_typ=strcpy(prueba,0,1);
+			comp=strcmp(name_typ,'R');
+			if(comp=0){
+			  cargaj:scale0 =f_ajuste1;
+			}  
+		}
+		error = oLdf.Execute();
+		printf('Ldf error = %d', error);
+		if(error<>0){
+			contador_error=contador_error+1;
+			contador=0;
+			printf('contador_error = %d', contador_error);
+		}
+		sumgrid=SummaryGrid();
+		Dda_total=sumgrid:c:LoadP;
+		Pvirtual=Gvirtual:m:P:bus1;
+		tol=abs(Pvirtual);		
+		tol=abs(Pvirtual);
+		if({contador_error=5}.or.{contador=100}){
+			max_iter_reached=1;
+		}
+	}
+	if(max_iter_reached=0){
+		printf('Número de iteraciones para escalar la demanda de escenario %s fue de : %i', namesc, contador);
+		op=esceni.Save();
+	}
+	else if(max_iter_reached=1){
+		printf('No convergió para escenario %s', namesc);		
+		com=sprintf('%s', namesc);
+		fprintf(0,com);
+		op=esceni.DiscardChanges();
+	}
+	escen=Escenarios.Next();
+}
+fclose(0);
